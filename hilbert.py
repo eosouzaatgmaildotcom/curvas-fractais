@@ -1,316 +1,198 @@
+# hilbert.py
 import tkinter as tk
 from tkinter import ttk
-import turtle
-from PIL import ImageGrab
-
-from hilberts import *
-from sierpins import *
-from progress import ProgressTracker
-
-
-# =======================================================
-# CONFIGURAÇÃO GLOBAL
-# =======================================================
-COLOR_LIST = ["red", "blue", "green", "purple", "orange", "black"]
-color_index = 0
-
-zoom_factor = 1.0
-camera_dx = 0
-camera_dy = 0
-
-progressbar = None
-root = None
-
-current_steps = []
-current_index = 0
-
-drawing_finished = False
-
-
-# =======================================================
-# FUNÇÕES AUXILIARES
-# =======================================================
-def save_png(filename="curva.png"):
-    cv = turtle.getcanvas()
-    x1 = cv.winfo_rootx()
-    y1 = cv.winfo_rooty()
-    x2 = x1 + cv.winfo_width()
-    y2 = y1 + cv.winfo_height()
-
-    img = ImageGrab.grab((x1, y1, x2, y2))
-    img.save(filename)
-    print(f"PNG salvo como: {filename}")
-
-
-# =======================================================
-# ZOOM
-# =======================================================
-def zoom_in(event=None):
-    global zoom_factor
-    if not drawing_finished:
-        return
-    zoom_factor *= 1.1
-    redraw_with_zoom()
-
-
-def zoom_out(event=None):
-    global zoom_factor
-    if not drawing_finished:
-        return
-    zoom_factor *= 0.9
-    redraw_with_zoom()
-
-
-# =======================================================
-# MOVIMENTO WASD
-# =======================================================
-def move_up(event=None):
-    global camera_dy
-    if not drawing_finished:
-        return
-    camera_dy += 20
-    redraw_with_zoom()
-
-
-def move_down(event=None):
-    global camera_dy
-    if not drawing_finished:
-        return
-    camera_dy -= 20
-    redraw_with_zoom()
-
-
-def move_left(event=None):
-    global camera_dx
-    if not drawing_finished:
-        return
-    camera_dx -= 20
-    redraw_with_zoom()
-
-
-def move_right(event=None):
-    global camera_dx
-    if not drawing_finished:
-        return
-    camera_dx += 20
-    redraw_with_zoom()
-
-
-def apply_view_transform():
-    pass  # no macOS, não usamos canvas.scale()
-
-
-# =======================================================
-# EXECUÇÃO PASSO-A-PASSO
-# =======================================================
-def execute_steps():
-    global current_index, drawing_finished
-
-    if current_index >= len(current_steps):
-        finish_drawing()
-        return
-
-    cmd, value = current_steps[current_index]
-
-    if cmd == "forward":
-        turtle.forward(value * zoom_factor)
-    elif cmd == "left":
-        turtle.left(value)
-    elif cmd == "right":
-        turtle.right(value)
-
-    current_index += 1
-
-    pct = current_index / len(current_steps) * 100
-    progressbar["value"] = pct
-    progressbar.update_idletasks()
-
-    root.after(1, execute_steps)
-
-
-def finish_drawing():
-    global drawing_finished
-    drawing_finished = True
-    progressbar["value"] = 100
-    progressbar.update_idletasks()
-    print("\nDesenho concluído.")
-
-
-# =======================================================
-# REDESENHO (aplica zoom e WASD)
-# =======================================================
-def redraw_with_zoom():
-    global current_index
-
-    if not drawing_finished:
-        return
-
-    turtle.clearscreen()
-    turtle.speed(0)
-    turtle.hideturtle()
-
-    turtle.penup()
-    turtle.goto(camera_dx, camera_dy)
-    turtle.pendown()
-
-    current_index = 0
-    root.after(1, execute_steps)
-
-
-# =======================================================
-# CAPTAÇÃO DOS PASSOS (GERADORES)
-# =======================================================
-def record_forward(step):
-    yield ("forward", step)
-
-
-def record_left(angle):
-    yield ("left", angle)
-
-
-def record_right(angle):
-    yield ("right", angle)
-
-
-# ------------------- HILBERT --------------------------
-def generate_hilbert_A(level, angle, step):
-    if level == 0:
-        return
-
-    yield from record_right(angle)
-    yield from generate_hilbert_B(level - 1, -angle, step)
-
-    yield from record_forward(step)
-    yield from record_left(angle)
-    yield from generate_hilbert_A(level - 1, angle, step)
-
-    yield from record_forward(step)
-    yield from generate_hilbert_A(level - 1, angle, step)
-
-    yield from record_left(angle)
-    yield from record_forward(step)
-    yield from generate_hilbert_B(level - 1, -angle, step)
-
-    yield from record_right(angle)
-
-
-def generate_hilbert_B(level, angle, step):
-    if level == 0:
-        return
-
-    yield from record_left(angle)
-    yield from generate_hilbert_A(level - 1, -angle, step)
-
-    yield from record_forward(step)
-    yield from record_right(angle)
-    yield from generate_hilbert_B(level - 1, angle, step)
-
-    yield from record_forward(step)
-    yield from generate_hilbert_B(level - 1, angle, step)
-
-    yield from record_right(angle)
-    yield from record_forward(step)
-    yield from generate_hilbert_A(level - 1, -angle, step)
-
-    yield from record_left(angle)
-
-
-# ------------------- SIERPINSKI --------------------------
-def generate_sierpinski_H(level, step):
-    if level == 0:
-        yield from record_forward(step)
-        return
-
-    yield from generate_sierpinski_H(level - 1, step)
-    yield from record_right(90)
-    yield from generate_sierpinski_C(level - 1, step)
-    yield from record_right(90)
-    yield from generate_sierpinski_H(level - 1, step)
-    yield from record_left(90)
-    yield from generate_sierpinski_C(level - 1, step)
-    yield from record_left(90)
-    yield from generate_sierpinski_H(level - 1, step)
-
-
-def generate_sierpinski_C(level, step):
-    if level == 0:
-        yield from record_forward(step)
-        return
-
-    yield from generate_sierpinski_C(level - 1, step)
-    yield from record_left(90)
-    yield from generate_sierpinski_H(level - 1, step)
-    yield from record_left(90)
-    yield from generate_sierpinski_C(level - 1, step)
-    yield from record_right(90)
-    yield from generate_sierpinski_H(level - 1, step)
-    yield from record_right(90)
-    yield from generate_sierpinski_C(level - 1, step)
-
-
-# =======================================================
-# INICIAR DESENHO
-# =======================================================
-def start_drawing():
-    global current_steps, current_index, color_index, drawing_finished
-    drawing_finished = False
-
-    curve_type = selected_curve.get()
-    order = order_var.get()
-    step = float(step_var.get())
-
-    turtle.clearscreen()
-    turtle.speed(0)
-    turtle.hideturtle()
-    turtle.pencolor(COLOR_LIST[color_index])
-    color_index = (color_index + 1) % len(COLOR_LIST)
-
-    if curve_type == "hilbert":
-        current_steps = list(generate_hilbert_A(order, 90, step))
-    else:
-        current_steps = list(generate_sierpinski_H(order, step))
-
-    current_index = 0
-    progressbar["value"] = 0
-
-    root.after(1, execute_steps)
-
-
-# =======================================================
-# INTERFACE TKINTER
-# =======================================================
-root = tk.Tk()
-root.title("Curvas Fractais - Hilbert e Sierpinski")
-
-selected_curve = tk.StringVar(value="hilbert")
-
-ttk.Label(root, text="Escolha a curva:").pack()
-ttk.Radiobutton(root, text="Hilbert", variable=selected_curve, value="hilbert").pack()
-ttk.Radiobutton(root, text="Sierpinski", variable=selected_curve, value="sierpinski").pack()
-
-ttk.Label(root, text="\nOrdem:").pack()
-order_var = tk.IntVar(value=4)
-ttk.Scale(root, from_=1, to=8, orient="horizontal", variable=order_var).pack()
-
-ttk.Label(root, text="\nPasso (step):").pack()
-step_var = tk.DoubleVar(value=10)
-ttk.Scale(root, from_=1, to=30, orient="horizontal", variable=step_var).pack()
-
-progressbar = ttk.Progressbar(root, orient="horizontal", length=300)
-progressbar.pack(pady=10)
-
-ttk.Button(root, text="Desenhar", command=start_drawing).pack(pady=5)
-ttk.Button(root, text="Salvar PNG", command=save_png).pack(pady=5)
-ttk.Button(root, text="Sair", command=root.quit).pack(pady=5)
-
-# Bindings (scroll + WASD)
-canvas = turtle.getcanvas()
-canvas.bind("<Button-4>", zoom_in)
-canvas.bind("<Button-5>", zoom_out)
-
-root.bind("w", move_up)
-root.bind("s", move_down)
-root.bind("a", move_left)
-root.bind("d", move_right)
-
-root.mainloop()
+import time
+import platform
+import os
+import sys
+import random
+
+try:
+    from hilberts import HilbertGenerator
+    from sierpins import SierpinskiGenerator
+except ImportError as e:
+    print(f"Erro de importação: {e}")
+    print("Certifique-se de que 'hilberts.py' e 'sierpins.py' estão na mesma pasta que este arquivo.")
+    sys.exit(1)
+
+class FractalApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Gerador de Fractais - Hilbert & Sierpinski")
+        
+        # Forçar a janela para o primeiro plano no MacOS
+        if platform.system() == 'Darwin':
+            try:
+                os.system('''/usr/bin/osascript -e 'tell app "Finder" to set frontmost of process "Python" to true' ''')
+            except:
+                pass
+            self.root.lift()
+            self.root.attributes('-topmost', True)
+            self.root.after_idle(self.root.attributes, '-topmost', False)
+        
+        # Controles de estado
+        self.is_drawing = False
+        self.drawing_complete = False
+        self.lines_to_draw = []
+        self.current_line_index = 0
+        self.start_time = 0
+        self.current_color = "#000000" # Cor inicial padrão
+        
+        self.setup_ui()
+        
+        self.root.update_idletasks()
+        self.root.eval('tk::PlaceWindow . center')
+        
+    def setup_ui(self):
+        control_frame = ttk.LabelFrame(self.root, text="Parâmetros do Fractal")
+        control_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+        
+        ttk.Label(control_frame, text="Curva:").grid(row=0, column=0, padx=5, pady=5)
+        self.fractal_type = tk.StringVar(value="Hilbert")
+        ttk.Combobox(control_frame, textvariable=self.fractal_type, values=["Hilbert", "Sierpinski"], state="readonly", width=10).grid(row=0, column=1, padx=5, pady=5)
+        
+        ttk.Label(control_frame, text="Recursão:").grid(row=0, column=2, padx=5, pady=5)
+        self.iterations = tk.IntVar(value=4)
+        ttk.Spinbox(control_frame, from_=1, to=8, textvariable=self.iterations, width=3).grid(row=0, column=3, padx=5, pady=5)
+        
+        ttk.Label(control_frame, text="Velocidade:").grid(row=0, column=4, padx=5, pady=5)
+        self.speed = tk.IntVar(value=50)
+        ttk.Spinbox(control_frame, from_=1, to=2000, textvariable=self.speed, width=5).grid(row=0, column=5, padx=5, pady=5)
+        
+        self.btn_draw = ttk.Button(control_frame, text="Executar", command=self.start_drawing)
+        self.btn_draw.grid(row=0, column=6, padx=10, pady=5)
+        
+        # Canvas ajustado para fundo branco
+        self.canvas = tk.Canvas(self.root, width=800, height=600, bg="white", highlightthickness=0)
+        self.canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=5)
+        
+        # Binds para Zoom e Pan (Navegação)
+        self.canvas.bind("<ButtonPress-1>", self.start_pan)
+        self.canvas.bind("<B1-Motion>", self.pan)
+        self.canvas.bind("<MouseWheel>", self.zoom)  
+        self.canvas.bind("<Button-4>", self.zoom)    
+        self.canvas.bind("<Button-5>", self.zoom)    
+        
+        status_frame = ttk.Frame(self.root)
+        status_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
+        
+        self.progress_var = tk.DoubleVar()
+        self.progress_bar = ttk.Progressbar(status_frame, variable=self.progress_var, maximum=100)
+        self.progress_bar.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+        
+        self.status_label = ttk.Label(status_frame, text="Pronto.")
+        self.status_label.pack(side=tk.RIGHT)
+
+    # --- Funções de Navegação e Zoom ---
+    def start_pan(self, event):
+        if not self.drawing_complete: return
+        self.canvas.scan_mark(event.x, event.y)
+
+    def pan(self, event):
+        if not self.drawing_complete: return
+        self.canvas.scan_dragto(event.x, event.y, gain=1)
+
+    def zoom(self, event):
+        if not self.drawing_complete: return
+        
+        if event.num == 4 or getattr(event, 'delta', 0) > 0:
+            scale_factor = 1.1 
+        elif event.num == 5 or getattr(event, 'delta', 0) < 0:
+            scale_factor = 0.9 
+        else:
+            return
+            
+        self.canvas.scale("all", event.x, event.y, scale_factor, scale_factor)
+
+    # --- Funções de Desenho ---
+    def start_drawing(self):
+        if self.is_drawing:
+            return
+            
+        self.canvas.delete("all")
+        self.is_drawing = True
+        self.drawing_complete = False
+        self.btn_draw.config(state=tk.DISABLED)
+        
+        # Gera cor aleatória a cada execução (garantindo que seja legível no branco)
+        r = random.randint(0, 200)
+        g = random.randint(0, 200)
+        b = random.randint(0, 200)
+        self.current_color = f'#{r:02x}{g:02x}{b:02x}'
+        
+        fractal = self.fractal_type.get()
+        depth = self.iterations.get()
+        
+        self.root.update()
+        width = int(self.canvas.winfo_width())
+        height = int(self.canvas.winfo_height())
+        
+        if width <= 1: width = 800
+        if height <= 1: height = 600
+            
+        x0 = width / 2
+        y0 = height / 2
+        proporcao = 3
+        
+        if fractal == "Hilbert":
+            gen = HilbertGenerator(proporcao=proporcao)
+            incremento = 300
+            for _ in range(1, depth):
+                incremento /= 2
+                
+            start_x = x0 + (incremento / 2)
+            start_y = y0 - (incremento / (2 * proporcao))
+            self.lines_to_draw = gen.generate(start_x, start_y, incremento, depth)
+            
+        else:
+            gen = SierpinskiGenerator(proporcao=proporcao)
+            square_size = 300
+            u = square_size / 4
+            for _ in range(1, depth):
+                u /= 2
+                
+            start_x = x0 - 2 * u
+            start_y = y0 - u - (u / (2 * proporcao))
+            self.lines_to_draw = gen.generate(start_x, start_y, u, depth)
+        
+        self.current_line_index = 0
+        self.start_time = time.time()
+        self.update_drawing()
+
+    def update_drawing(self):
+        if not self.is_drawing:
+            return
+            
+        speed = self.speed.get()
+        end_index = min(self.current_line_index + speed, len(self.lines_to_draw))
+        
+        # Utiliza a cor aleatória gerada para preencher as linhas
+        for i in range(self.current_line_index, end_index):
+            x1, y1, x2, y2 = self.lines_to_draw[i]
+            self.canvas.create_line(x1, y1, x2, y2, fill=self.current_color, width=1)
+        
+        self.current_line_index = end_index
+        total_lines = len(self.lines_to_draw)
+        progress = (self.current_line_index / total_lines) * 100 if total_lines > 0 else 100
+        
+        self.progress_var.set(progress)
+        elapsed_time = time.time() - self.start_time
+        
+        if self.current_line_index > 0:
+            lines_per_sec = self.current_line_index / elapsed_time
+            remaining_lines = total_lines - self.current_line_index
+            eta = remaining_lines / lines_per_sec if lines_per_sec > 0 else 0
+            self.status_label.config(text=f"{progress:.1f}% | Total: {total_lines} | ETA: {eta:.1f}s")
+        
+        if self.current_line_index < total_lines:
+            self.root.after(16, self.update_drawing)
+        else:
+            self.is_drawing = False
+            self.drawing_complete = True
+            self.btn_draw.config(state=tk.NORMAL)
+            self.status_label.config(text=f"Concluído em {elapsed_time:.2f}s! (Arraste e use o scroll para zoom)")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = FractalApp(root)
+    root.mainloop()
