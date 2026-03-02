@@ -2,8 +2,6 @@
 
 ### Retro Fractal Generator: Hilbert & Sierpinski Curves
 
-![Hilbert curve fractal](https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Hilbert_curve_1-6.svg/512px-Hilbert_curve_1-6.svg.png)
-
 This project is a modern Python port of a legacy 1990s Turbo Pascal program. It generates **Hilbert** and **Sierpinski** space-filling curves using recursive algorithms. 
 
 The original codebase relied on the synchronous MS-DOS `Graph` (`BGI`) library. This modernization replaces the old blocking rendering with a responsive `Tkinter` Graphical User Interface (GUI). The new architecture calculates the geometric vertices in the background and renders the drawing progressively, allowing users to watch the algorithm unfold in real-time without freezing the interface.
