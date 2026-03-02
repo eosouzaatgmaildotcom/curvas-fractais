@@ -1,201 +1,65 @@
-# curvas-fractais
-Curvas Fractais - Hilbert e Sierpinski
+# Fractal Curves - Hilbert e Sierpinski
 
-### Visualizador Interativo de Fractais (Hilbert & Sierpinski) com Interface Gráfica
+### Retro Fractal Generator: Hilbert & Sierpinski Curves
 
-**Compatível com macOS, Windows e Linux**
+![Hilbert curve fractal](https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Hilbert_curve_1-6.svg/512px-Hilbert_curve_1-6.svg.png)
 
-Este projeto oferece um visualizador interativo das curvas fractais **Hilbert** e **Sierpinski**, permitindo explorar essas estruturas geométricas de forma dinâmica e intuitiva.
-Foi especialmente projetado para funcionar de forma **estável no macOS**, onde Tkinter + Turtle exigem cuidados adicionais.
+This project is a modern Python port of a legacy 1990s Turbo Pascal program. It generates **Hilbert** and **Sierpinski** space-filling curves using recursive algorithms. 
 
----
+The original codebase relied on the synchronous MS-DOS `Graph` (`BGI`) library. This modernization replaces the old blocking rendering with a responsive `Tkinter` Graphical User Interface (GUI). The new architecture calculates the geometric vertices in the background and renders the drawing progressively, allowing users to watch the algorithm unfold in real-time without freezing the interface.
 
-# 📌 Recursos
+## 🚀 Features
 
-### ✔ Interface gráfica completa (Tkinter)
+* **Animated Rendering:** Watch the recursive curves being drawn segment by segment.
+* **Real-time Analytics:** Tracks rendering progress and calculates the Estimated Time of Arrival (ETA) based on the current frame rate.
+* **Interactive Canvas:** Once the drawing is complete, you can **Pan** (click and drag) and **Zoom** (scroll wheel) to explore the deep complexity of the fractals.
+* **Dynamic Styling:** Generates a random, high-contrast dark color for the drawing strokes against a clean white background on every run.
+* **Modular Architecture:** Strictly maintains the original separation of concerns across three distinct files.
 
-O programa possui uma janela inicial onde você pode escolher:
+## 📁 Project Structure
 
-* Tipo de curva: **Hilbert** ou **Sierpinski**
-* Ordem da curva (nível do fractal)
-* Tamanho do passo (step)
-* Iniciar desenho
-* Salvar como PNG
+* `hilbert.py`: The main orchestrator. Handles the Tkinter GUI, asynchronous frame updates, and user interactions (pan/zoom).
+* `hilberts.py`: Encapsulates the mathematical generator and recursive logic for the Hilbert curve.
+* `sierpins.py`: Encapsulates the mathematical generator and recursive logic for the Sierpinski curve.
 
----
+## ⚙️ Requirements & Execution
 
-### ✔ Execução passo-a-passo (sem threads)
+This project uses only Python's standard libraries. No external dependencies are required.
 
-O desenho é realizado de forma incremental usando:
+1. Ensure you have **Python 3** installed.
+2. Clone this repository and navigate to the folder containing the three files.
+3. Run the main application:
+   ```bash
+   python3 hilbert.py
 
-```python
-root.after(...)
-```
+Note for MacOS Users: Tkinter handles window management differently on macOS. The script is optimized to force the window to the foreground. If you encounter errors regarding _tkinter, ensure you have the Tkinter module installed (e.g., via Homebrew: brew install python-tk).
 
-Isso garante:
+## 🎛️ Recommended Parameters for Observation
+The GUI allows you to tweak the recursion depth and drawing speed. Here are some great parameter combinations to observe the algorithm's behavior:
 
-* Interface sempre responsiva
-* Nenhum travamento
-* Total compatibilidade com macOS
+1. The "Educational" Mode
 
----
+* Curve: Sierpinski
+* Recursion Level: 4 or 5
+* Speed: 5 lines/frame
 
-### ✔ Barra de progresso gráfica
+Why: A slow drawing speed lets you clearly see the recursive "depth-first" path the algorithm takes to fill the space.
 
-A execução do fractal é exibida com uma barra de progresso dinâmica.
+2. The "Hypnotic Flow"
 
----
+* Curve: Hilbert
+* Recursion Level: 6
+* Speed: 50 lines/frame
 
-### ✔ Zoom funcional (macOS-friendly)
+Why: The perfect balance. It generates a complex, dense curve, but at a speed that is highly satisfying to watch without taking too long.
 
-O zoom é implementado corretamente no macOS através de uma estratégia geométrica:
+3. The "Stress Test & Deep Zoom"
 
-* Aumenta/diminui o passo durante o redesenho
-* **Scroll do mouse** aumenta/diminui o zoom
-* Rápido e seguro — sem `canvas.scale()`
+* Curve: Hilbert (or Sierpinski)
+* Recursion Level: 8
+* Speed: 1000 lines/frame
 
----
+Why: Level 8 generates a massive amount of coordinate segments. Pumping up the speed allows the application to render it in a reasonable timeframe (watch the ETA tracker!). Once it finishes, use your mouse wheel to zoom deep into the intricate details of the final fractal.
 
-### ✔ Movimento da “câmera” com WASD
-
-Somente após o desenho estar 100% concluído, você pode navegar pela curva com:
-
-| Tecla | Ação                |
-| ----- | ------------------- |
-| **W** | mover para cima     |
-| **A** | mover para esquerda |
-| **S** | mover para baixo    |
-| **D** | mover para direita  |
-
----
-
-### ✔ Alternância automática de cores
-
-Cada curva desenhada utiliza uma cor diferente, rotacionada a partir de uma paleta.
-
----
-
-### ✔ Exportação como PNG
-
-A curva pode ser salva via botão:
-
-```
-Salvar PNG
-```
-
-ou manualmente a qualquer momento.
-
----
-
-# 🧩 Curvas disponíveis
-
-## 🔷 Curva de Hilbert
-
-Um fractal espaço-preenchido que mapeia 1D para 2D continuamente.
-
-## 🔺 Curva de Sierpinski (versão H/C do Pascal original)
-
-Uma variação labiríntica inspirada no triângulo de Sierpinski, modelada a partir do algoritmo dos anos 90 em Pascal.
-
----
-
-# 🛠 Como executar
-
-## 1. Instale o Python
-
-Recomendado: **Python 3.10+**
-
-## 2. Instale dependências
-
-Somente o Pillow é necessário:
-
-```bash
-pip install pillow
-```
-
-## 3. Execute o programa
-
-```bash
-python3 hilbert.py
-```
-
----
-
-# 🗂 Estrutura do projeto
-
-```
-/ (raiz)
-├── hilbert.py        # Interface gráfica e motor principal
-├── hilberts.py       # Implementação original da curva de Hilbert
-├── sierpins.py       # Implementação original da curva de Sierpinski
-├── progress.py       # Sistema de progresso no terminal
-└── README.md         # Este arquivo
-```
-
----
-
-# ⚙ Detalhes técnicos
-
-### 🔸 Execução sem threads
-
-Essencial para evitar erro `mutated while enumerated` no macOS.
-
-### 🔸 Zoom geométrico
-
-Cada comando `"forward"` é multiplicado por `zoom_factor`.
-
-### 🔸 Movimento de câmera
-
-Após o desenho, redesenha usando novos offsets (`camera_dx`, `camera_dy`).
-
-### 🔸 Captura de tela (PNG)
-
-Usa `PIL.ImageGrab` para salvar a janela Turtle.
-
-### 🔸 Geradores para curvas
-
-As recursões Hilbert/Sierpinski são convertidas em sequências iteráveis de passos:
-
-```python
-("forward", step)
-("left", angle)
-("right", angle)
-```
-
----
-
-# 🎯 Objetivo do Projeto
-
-Este programa nasceu a partir da necessidade de:
-
-* Reviver código legado dos anos 90 escrito em **Pascal**, usando **Graph** da Borland.
-* Converter essas curvas para **Python moderno**.
-* Acrescentar funcionalidades interativas inexistentes na época:
-
-  * Menu gráfico
-  * Zoom
-  * Movimento de câmera
-  * Salvamento em PNG
-  * Cores dinâmicas
-  * Barra de progresso
-  * Interface responsiva
-
-O resultado é uma ferramenta educacional e visualmente rica para quem deseja:
-
-* Estudar recursão
-* Explorar fractais
-* Comparar implementações modernas e legadas
-* Criar arte generativa
-
----
-
-# 🤝 Contribuições
-
-Pull requests são bem-vindos!
-Sugestões de melhorias no zoom, rotação ou novos fractais também.
-
----
-
-# 📜 Licença
-
-MIT — livre para uso, edição e distribuição.
+## 📜 License
+This project is open-source and available under the MIT License. Feel free to fork, modify, and learn from the code!
