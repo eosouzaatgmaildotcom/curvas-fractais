@@ -6,6 +6,8 @@ import platform
 import os
 import sys
 import random
+from outros_fractais import KochGenerator, CesaroGenerator, DragonGenerator
+import webbrowser
 
 try:
     from hilberts import HilbertGenerator
@@ -49,11 +51,13 @@ class FractalApp:
         
         ttk.Label(control_frame, text="Curva:").grid(row=0, column=0, padx=5, pady=5)
         self.fractal_type = tk.StringVar(value="Hilbert")
-        ttk.Combobox(control_frame, textvariable=self.fractal_type, values=["Hilbert", "Sierpinski"], state="readonly", width=10).grid(row=0, column=1, padx=5, pady=5)
+        ttk.Combobox(control_frame, textvariable=self.fractal_type, 
+             values=["Hilbert", "Sierpinski", "Koch", "Cesaro", "Dragon"], 
+             state="readonly", width=12).grid(row=0, column=1, padx=5, pady=5)
         
         ttk.Label(control_frame, text="Recursão:").grid(row=0, column=2, padx=5, pady=5)
         self.iterations = tk.IntVar(value=4)
-        ttk.Spinbox(control_frame, from_=1, to=8, textvariable=self.iterations, width=3).grid(row=0, column=3, padx=5, pady=5)
+        ttk.Spinbox(control_frame, from_=1, to=28, textvariable=self.iterations, width=3).grid(row=0, column=3, padx=5, pady=5)
         
         ttk.Label(control_frame, text="Velocidade:").grid(row=0, column=4, padx=5, pady=5)
         self.speed = tk.IntVar(value=50)
@@ -61,7 +65,11 @@ class FractalApp:
         
         self.btn_draw = ttk.Button(control_frame, text="Executar", command=self.start_drawing)
         self.btn_draw.grid(row=0, column=6, padx=10, pady=5)
-        
+
+        # Botão para abrir a Wikipedia
+        self.btn_wiki = ttk.Button(control_frame, text="O que são Fractais?", command=self.open_wikipedia)
+        self.btn_wiki.grid(row=0, column=7, padx=10, pady=5)
+
         # Canvas ajustado para fundo branco
         self.canvas = tk.Canvas(self.root, width=800, height=600, bg="white", highlightthickness=0)
         self.canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=5)
@@ -144,7 +152,7 @@ class FractalApp:
             start_y = y0 - (incremento / (2 * proporcao))
             self.lines_to_draw = gen.generate(start_x, start_y, incremento, depth)
             
-        else:
+        elif fractal == "Sierpinski":
             gen = SierpinskiGenerator(proporcao=proporcao)
             square_size = 300
             u = square_size / 4
@@ -154,10 +162,25 @@ class FractalApp:
             start_x = x0 - 2 * u
             start_y = y0 - u - (u / (2 * proporcao))
             self.lines_to_draw = gen.generate(start_x, start_y, u, depth)
-        
+        elif fractal == "Koch":
+            gen = KochGenerator()
+            self.lines_to_draw = gen.generate(x0 - 200, y0 + 100, 400, depth)
+        elif fractal == "Cesaro":
+            gen = CesaroGenerator()
+            self.lines_to_draw = gen.generate(x0 - 200, y0 + 100, 400, depth)
+        elif fractal == "Dragon":
+            gen = DragonGenerator()
+            # Ajuste de escala para o dragão não sumir da tela
+            self.lines_to_draw = gen.generate(x0 - 100, y0, 300, depth)
+
         self.current_line_index = 0
         self.start_time = time.time()
         self.update_drawing()
+
+    def open_wikipedia(self):
+        """Abre o artigo da Wikipedia sobre fractais no navegador."""
+        url = "https://pt.wikipedia.org/wiki/Fractal"
+        webbrowser.open(url)
 
     def update_drawing(self):
         if not self.is_drawing:
